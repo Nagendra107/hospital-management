@@ -1,0 +1,48 @@
+<!-- Shared sidebar HTML - include this template in each page -->
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-mark">
+            <div class="logo-icon">🏥</div>
+            <div>
+                <div class="logo-text">MediCare Pro</div>
+                <div class="logo-sub">Hospital Management</div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-section">Main</div>
+        <a class="nav-item" href="index.html">
+            <span class="icon">📊</span> Dashboard
+        </a>
+        <a class="nav-item" href="patients.html">
+            <span class="icon">🧑‍⚕️</span> Patients
+        </a>
+        <a class="nav-item" href="appointments.html">
+            <span class="icon">📅</span> Appointments
+        </a>
+        <a class="nav-item" href="doctors.html">
+            <span class="icon">👨‍⚕️</span> Doctors
+        </a>
+
+        <div class="nav-section">Operations</div>
+        <a class="nav-item" href="billing.html">
+            <span class="icon">🧾</span> Billing
+        </a>
+
+        <div class="nav-section">Account</div>
+        <a class="nav-item" href="#" onclick="logout()">
+            <span class="icon">🚪</span> Logout
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="user-card">
+            <div class="user-avatar" id="user-avatar">AD</div>
+            <div class="user-info">
+                <div class="user-name" id="user-name">Loading...</div>
+                <div class="user-role" id="user-role">—</div>
+            </div>
+        </div>
+    </div>
+</aside>

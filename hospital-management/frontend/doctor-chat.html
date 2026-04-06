@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient Messages — MediCare Pro</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Lora:wght@700&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Nunito', sans-serif; background: #f0f4ff; display: flex; height: 100vh; overflow: hidden; }
+
+.sidebar { width: 260px; background: #0d1b2a; display: flex; flex-direction: column; flex-shrink: 0; }
+.sidebar-logo { padding: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.sidebar-logo-icon { width: 36px; height: 36px; background: #4f6ef7; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.sidebar-logo-text { font-family: 'Lora', serif; font-size: 16px; font-weight: 700; color: #fff; }
+.sidebar-nav { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.2s; }
+.nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.nav-item.active { background: #4f6ef7; color: #fff; }
+
+.main-content { flex: 1; display: flex; overflow: hidden; }
+
+.chat-layout { display: grid; grid-template-columns: 300px 1fr; width: 100%; overflow: hidden; }
+
+.contacts-panel { background: #fff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
+.contacts-header { padding: 20px; font-family: 'Lora', serif; font-size: 16px; font-weight: 700; border-bottom: 1px solid #e2e8f0; }
+.contact-search { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
+.contact-search input { width: 100%; padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-family: 'Nunito', sans-serif; font-size: 13px; outline: none; }
+.contact-search input:focus { border-color: #4f6ef7; }
+.contacts-list { flex: 1; overflow-y: auto; }
+.contact-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; border-bottom: 1px solid #f8f8f8; transition: background 0.15s; position: relative; }
+.contact-item:hover { background: #f8faff; }
+.contact-item.active { background: #eef1ff; }
+.contact-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #06b6a0, #4f6ef7); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: #fff; flex-shrink: 0; }
+.contact-info { flex: 1; min-width: 0; }
+.contact-name { font-size: 13px; font-weight: 700; }
+.contact-sub { font-size: 11px; color: #64748b; }
+.contact-last-msg { font-size: 11px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.unread-badge { background: #4f6ef7; color: #fff; border-radius: 50%; min-width: 20px; height: 20px; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+.online-dot { width: 10px; height: 10px; background: #10b981; border-radius: 50%; border: 2px solid #fff; position: absolute; bottom: 12px; left: 44px; }
+
+.chat-area { display: flex; flex-direction: column; background: #f0f4ff; overflow: hidden; }
+.chat-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b; gap: 12px; }
+.chat-header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 16px 24px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.chat-header-avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #06b6a0, #4f6ef7); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: #fff; }
+.chat-header-name { font-weight: 800; font-size: 15px; }
+.chat-header-status { font-size: 11px; color: #10b981; font-weight: 700; }
+
+.messages-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.message-row { display: flex; gap: 10px; animation: fadeUp 0.2s ease; }
+.message-row.mine { flex-direction: row-reverse; }
+.message-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #06b6a0, #4f6ef7); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; flex-shrink: 0; align-self: flex-end; }
+.message-row.mine .message-avatar { background: linear-gradient(135deg, #4f6ef7, #6366f1); }
+.message-bubble { max-width: 65%; padding: 12px 16px; border-radius: 18px; font-size: 13px; line-height: 1.5; }
+.message-bubble.theirs { background: #fff; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; }
+.message-bubble.mine { background: #4f6ef7; color: #fff; border-bottom-right-radius: 4px; }
+.message-time { font-size: 10px; opacity: 0.6; margin-top: 4px; display: block; }
+.message-row.mine .message-time { text-align: right; }
+
+.typing-indicator { display: flex; gap: 4px; align-items: center; padding: 12px 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; border-bottom-left-radius: 4px; width: fit-content; }
+.typing-dot { width: 7px; height: 7px; border-radius: 50%; background: #64748b; animation: typingBounce 1.2s infinite; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-6px); } }
+
+.chat-input-area { background: #fff; border-top: 1px solid #e2e8f0; padding: 16px 20px; display: flex; align-items: flex-end; gap: 12px; flex-shrink: 0; }
+.chat-input { flex: 1; border: 2px solid #e2e8f0; border-radius: 24px; padding: 11px 18px; font-family: 'Nunito', sans-serif; font-size: 13px; outline: none; resize: none; max-height: 100px; line-height: 1.4; transition: border-color 0.2s; }
+.chat-input:focus { border-color: #4f6ef7; }
+.send-btn { width: 44px; height: 44px; border-radius: 50%; background: #4f6ef7; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all 0.2s; flex-shrink: 0; }
+.send-btn:hover { background: #3a56d4; transform: scale(1.05); }
+.date-divider { text-align: center; font-size: 11px; color: #64748b; font-weight: 700; position: relative; margin: 8px 0; }
+.date-divider::before, .date-divider::after { content:''; position:absolute; top:50%; width:35%; height:1px; background:#e2e8f0; }
+.date-divider::before { left:0; }
+.date-divider::after { right:0; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+.topbar { background: #fff; padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">🏥</div>
+        <div class="sidebar-logo-text">MediCare Pro</div>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="index.html" class="nav-item">🏠 Dashboard</a>
+        <a href="patients.html" class="nav-item">👥 Patients</a>
+        <a href="appointments.html" class="nav-item">📅 Appointments</a>
+        <a href="doctors.html" class="nav-item">👨‍⚕️ Doctors</a>
+        <a href="billing.html" class="nav-item">🧾 Billing</a>
+        <a href="doctor-chat.html" class="nav-item active">💬 Messages</a>
+    </nav>
+    <div style="padding:16px;border-top:1px solid rgba(255,255,255,0.08)">
+        <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:50%;background:#4f6ef7;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px" id="sidebar-avatar">?</div>
+            <div>
+                <div style="color:#fff;font-size:13px;font-weight:700" id="sidebar-name">Loading...</div>
+                <div style="color:rgba(255,255,255,0.5);font-size:11px" id="sidebar-role">—</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main -->
+<div class="main-content">
+    <div class="chat-layout">
+
+        <!-- Contacts -->
+        <div class="contacts-panel">
+            <div class="contacts-header">💬 Patient Messages</div>
+            <div class="contact-search">
+                <input type="text" placeholder="Search patients..." oninput="searchContacts(this.value)">
+            </div>
+            <div class="contacts-list" id="contacts-list">
+                <div style="text-align:center;padding:32px;color:#64748b;font-size:13px">
+                    <div style="font-size:32px;margin-bottom:8px">⏳</div>
+                    Loading patients...
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area" id="chat-area">
+            <div class="chat-empty">
+                <div style="font-size:64px">💬</div>
+                <div style="font-family:'Lora',serif;font-size:20px;font-weight:700;color:#1e2a3a">Patient Messages</div>
+                <div style="font-size:13px">Select a patient to view their messages</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+// Staff auth check
+const token = localStorage.getItem('token');
+const staffUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
+if (!token || !staffUser) { window.location.href = 'login.html'; }
+
+// Load sidebar user info
+if (staffUser) {
+    const initials = ((staffUser.fullName||staffUser.username||'?').split(' ').map(n=>n[0]).join('')).slice(0,2).toUpperCase();
+    document.getElementById('sidebar-avatar').textContent = initials;
+    document.getElementById('sidebar-name').textContent = staffUser.fullName || staffUser.username;
+    document.getElementById('sidebar-role').textContent = staffUser.role || 'Staff';
+}
+
+let stompClient = null;
+let currentRoomId = null;
+let currentPatient = null;
+let allPatients = [];
+
+// Get doctor ID from logged in user
+const doctorId = staffUser?.id || 1;
+
+// ====== WebSocket Connect ======
+function connectWebSocket() {
+    const socket = new SockJS('http://localhost:8080/api/ws');
+    stompClient = Stomp.over(socket);
+    stompClient.debug = null;
+    stompClient.connect({}, () => {
+        console.log('Connected!');
+    }, () => {
+        setTimeout(connectWebSocket, 3000);
+    });
+}
+
+connectWebSocket();
+
+// ====== Load Patients ======
+async function loadPatients() {
+    const res = await fetch('http://localhost:8080/api/chat/patients', {
+        headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const patients = await res.json();
+    allPatients = patients;
+    renderContacts(patients);
+}
+
+function renderContacts(patients) {
+    const el = document.getElementById('contacts-list');
+    if (!patients.length) {
+        el.innerHTML = '<div style="text-align:center;padding:32px;color:#64748b;font-size:13px">No patients registered yet</div>';
+        return;
+    }
+    el.innerHTML = patients.map(p => `
+        <div class="contact-item" id="contact-${p.id}" onclick="openChat(${p.id})">
+            <div class="contact-avatar">${((p.firstName||'?')[0]+(p.lastName||'')[0]).toUpperCase()}</div>
+            <div class="online-dot"></div>
+            <div class="contact-info">
+                <div class="contact-name">${p.firstName} ${p.lastName}</div>
+                <div class="contact-sub">${p.email}</div>
+                <div class="contact-last-msg" id="last-msg-${p.id}">Click to view messages</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function searchContacts(q) {
+    const filtered = allPatients.filter(p =>
+        `${p.firstName} ${p.lastName} ${p.email}`.toLowerCase().includes(q.toLowerCase())
+    );
+    renderContacts(filtered);
+}
+
+// ====== Open Chat ======
+async function openChat(patientId) {
+    currentPatient = allPatients.find(p => p.id === patientId);
+    if (!currentPatient) return;
+
+    document.querySelectorAll('.contact-item').forEach(c => c.classList.remove('active'));
+    document.getElementById('contact-' + patientId)?.classList.add('active');
+
+    currentRoomId = `doctor_${doctorId}_patient_${patientId}`;
+
+    if (window.currentSub) window.currentSub.unsubscribe();
+    if (window.typingSub) window.typingSub.unsubscribe();
+
+    buildChatUI(currentPatient);
+    await loadHistory();
+
+    if (stompClient?.connected) {
+        window.currentSub = stompClient.subscribe(`/topic/chat/${currentRoomId}`, (msg) => {
+            const message = JSON.parse(msg.body);
+            appendMessage(message);
+            scrollToBottom();
+        });
+
+        window.typingSub = stompClient.subscribe(`/topic/typing/${currentRoomId}`, (msg) => {
+            const data = JSON.parse(msg.body);
+            if (data.sender !== staffUser?.email) showTyping(data.senderName);
+        });
+    }
+
+    await fetch(`http://localhost:8080/api/chat/read/${currentRoomId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ role: 'DOCTOR' })
+    });
+}
+
+function buildChatUI(patient) {
+    const initials = ((patient.firstName||'?')[0]+(patient.lastName||'')[0]).toUpperCase();
+    document.getElementById('chat-area').innerHTML = `
+        <div class="chat-header">
+            <div class="chat-header-avatar">${initials}</div>
+            <div style="flex:1">
+                <div class="chat-header-name">${patient.firstName} ${patient.lastName}</div>
+                <div class="chat-header-status">🟢 Patient · ${patient.email}</div>
+            </div>
+            <div style="font-size:12px;color:#64748b">🔒 Private & Secure</div>
+        </div>
+
+        <div class="messages-container" id="messages-container">
+            <div style="text-align:center;padding:24px"><div style="width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:#4f6ef7;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto"></div></div>
+        </div>
+
+        <div id="typing-row" style="padding:0 20px 8px;display:none">
+            <div style="display:flex;gap:10px;align-items:center">
+                <div class="message-avatar">${initials}</div>
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <textarea class="chat-input" id="chat-input" placeholder="Type your reply..." rows="1"
+                onkeydown="handleKeyDown(event)" oninput="handleTyping();autoResize(this)"></textarea>
+            <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+    `;
+}
+
+async function loadHistory() {
+    const res = await fetch(`http://localhost:8080/api/chat/history/${currentRoomId}`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const messages = await res.json();
+    const container = document.getElementById('messages-container');
+
+    if (!messages.length) {
+        container.innerHTML = `<div style="text-align:center;padding:32px;color:#64748b"><div style="font-size:40px;margin-bottom:12px">👋</div><div style="font-weight:700">No messages yet</div><div style="font-size:12px;margin-top:4px">Start the conversation with ${currentPatient.firstName}</div></div>`;
+        return;
+    }
+
+    container.innerHTML = '';
+    let lastDate = '';
+    messages.forEach(msg => {
+        const msgDate = new Date(msg.sentAt).toLocaleDateString();
+        if (msgDate !== lastDate) {
+            lastDate = msgDate;
+            const div = document.createElement('div');
+            div.className = 'date-divider';
+            div.textContent = msgDate === new Date().toLocaleDateString() ? 'Today' : msgDate;
+            container.appendChild(div);
+        }
+        appendMessage(msg, false);
+    });
+    scrollToBottom();
+}
+
+function appendMessage(msg, scroll = true) {
+    const container = document.getElementById('messages-container');
+    if (!container) return;
+
+    const emptyEl = container.querySelector('div[style*="text-align:center"]');
+    if (emptyEl) emptyEl.remove();
+
+    const isMe = msg.senderRole === 'DOCTOR';
+    const initials = msg.senderName ? msg.senderName.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : '?';
+    const time = msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}) : '';
+
+    const row = document.createElement('div');
+    row.className = `message-row ${isMe ? 'mine' : ''}`;
+    row.innerHTML = `
+        <div class="message-avatar">${initials}</div>
+        <div>
+            <div class="message-bubble ${isMe ? 'mine' : 'theirs'}">
+                ${escapeHtml(msg.content)}
+                <span class="message-time">${time} ${isMe ? '✓✓' : ''}</span>
+            </div>
+        </div>
+    `;
+    container.appendChild(row);
+
+    const lastMsgEl = document.getElementById(`last-msg-${currentPatient?.id}`);
+    if (lastMsgEl) lastMsgEl.textContent = (isMe ? 'You: ' : '') + msg.content.slice(0, 30);
+
+    if (scroll) scrollToBottom();
+}
+
+function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const content = input.value.trim();
+    if (!content || !stompClient?.connected) return;
+
+    const message = {
+        roomId: currentRoomId,
+        senderEmail: staffUser?.email || '',
+        senderName: staffUser?.fullName || staffUser?.username || 'Doctor',
+        senderRole: 'DOCTOR',
+        content
+    };
+
+    stompClient.send('/app/chat.send', {}, JSON.stringify(message));
+    input.value = '';
+    input.style.height = 'auto';
+}
+
+function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function handleTyping() {
+    if (!stompClient?.connected || !currentRoomId) return;
+    stompClient.send('/app/chat.typing', {}, JSON.stringify({
+        roomId: currentRoomId, sender: staffUser?.email, senderName: staffUser?.fullName || 'Doctor'
+    }));
+}
+
+let typingDisplayTimeout;
+function showTyping() {
+    const row = document.getElementById('typing-row');
+    if (row) {
+        row.style.display = 'block';
+        clearTimeout(typingDisplayTimeout);
+        typingDisplayTimeout = setTimeout(() => row.style.display = 'none', 2000);
+    }
+}
+
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function scrollToBottom() {
+    const c = document.getElementById('messages-container');
+    if (c) c.scrollTop = c.scrollHeight;
+}
+
+function escapeHtml(text) {
+    return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+loadPatients();
+</script>
+</body>
+</html>

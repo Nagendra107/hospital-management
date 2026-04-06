@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — MediCare Pro</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.dash-grid { display: grid; grid-template-columns: 1fr 360px; gap: 20px; margin-bottom: 20px; }
+.appt-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 20px; border-bottom: 1px solid #f3f0ec;
+    cursor: pointer; transition: background 0.15s;
+}
+.appt-item:hover { background: #fafaf9; }
+.appt-item:last-child { border-bottom: none; }
+.appt-time {
+    font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+    color: var(--teal); background: var(--teal-pale);
+    padding: 4px 8px; border-radius: 6px; flex-shrink: 0; min-width: 52px; text-align: center;
+}
+.appt-info { flex: 1; }
+.appt-name { font-weight: 600; font-size: 13px; }
+.appt-dept { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 100px; padding: 0 20px 0; }
+.bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bar { width: 100%; border-radius: 5px 5px 0 0; transition: opacity 0.2s; cursor: pointer; }
+.bar:hover { opacity: 0.8; }
+.bar-lbl { font-size: 10px; color: var(--muted); }
+.chart-legend { display: flex; gap: 14px; padding: 10px 20px 16px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.alert-item { display: flex; align-items: center; gap: 12px; padding: 13px 20px; border-bottom: 1px solid #f3f0ec; }
+.alert-item:last-child { border-bottom: none; }
+.alert-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.alert-text .msg { font-size: 12px; font-weight: 600; }
+.alert-text .time { font-size: 11px; color: var(--muted); margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-mark">
+            <div class="logo-icon">🏥</div>
+            <div>
+                <div class="logo-text">MediCare Pro</div>
+                <div class="logo-sub">Hospital Management</div>
+            </div>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section">Main</div>
+        <a class="nav-item active" href="index.html"><span class="icon">📊</span> Dashboard</a>
+        <a class="nav-item" href="patients.html"><span class="icon">🧑‍⚕️</span> Patients</a>
+        <a class="nav-item" href="appointments.html"><span class="icon">📅</span> Appointments</a>
+        <a class="nav-item" href="doctors.html"><span class="icon">👨‍⚕️</span> Doctors</a>
+        <div class="nav-section">Operations</div>
+        <a class="nav-item" href="billing.html"><span class="icon">🧾</span> Billing</a>
+        <div class="nav-section">Account</div>
+        <a class="nav-item" href="#" onclick="logout()"><span class="icon">🚪</span> Logout</a>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="user-card">
+            <div class="user-avatar" id="user-avatar">AD</div>
+            <div class="user-info">
+                <div class="user-name" id="user-name">Loading...</div>
+                <div class="user-role" id="user-role">—</div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<main class="main">
+    <header class="topbar">
+        <div>
+            <div class="page-title">Dashboard</div>
+            <div class="page-subtitle" id="date-display"></div>
+        </div>
+        <div style="flex:1"></div>
+        <div class="topbar-actions">
+            <div class="btn-icon">🔔<span class="notif-dot"></span></div>
+            <a href="patients.html" class="btn btn-primary">＋ New Patient</a>
+        </div>
+    </header>
+
+    <div class="content">
+        <!-- Stats -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+                <div class="stat-bg">🛏️</div>
+                <div class="stat-icon">🛏️</div>
+                <div class="stat-label">Total Patients</div>
+                <div class="stat-value" style="color:var(--teal)" id="stat-total">—</div>
+                <div class="stat-change up">↑ Registered patients</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-bg">🧑‍⚕️</div>
+                <div class="stat-icon">🧑‍⚕️</div>
+                <div class="stat-label">Today's Appointments</div>
+                <div class="stat-value" style="color:var(--amber)" id="stat-appts">—</div>
+                <div class="stat-change up">↑ Scheduled today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-bg">🚨</div>
+                <div class="stat-icon">🚨</div>
+                <div class="stat-label">Critical Cases</div>
+                <div class="stat-value" style="color:var(--rose)" id="stat-critical">—</div>
+                <div class="stat-change down">Needs immediate attention</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-bg">💰</div>
+                <div class="stat-icon">💰</div>
+                <div class="stat-label">Total Revenue</div>
+                <div class="stat-value" style="color:var(--green);font-size:22px" id="stat-revenue">—</div>
+                <div class="stat-change up">↑ From paid bills</div>
+            </div>
+        </div>
+
+        <!-- Middle grid -->
+        <div class="dash-grid">
+            <!-- Recent patients table -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Recent Patients</div>
+                    <a href="patients.html" class="card-action">View all →</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Status</th>
+                            <th>Doctor</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-patients">
+                        <tr><td colspan="4" class="table-empty"><div class="spinner"></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Today's appointments -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Today's Appointments</div>
+                    <a href="appointments.html" class="card-action">All →</a>
+                </div>
+                <div id="today-appts">
+                    <div class="loading"><div class="spinner"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom row -->
+        <div class="grid-2">
+            <!-- Bar chart -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Patient Status Overview</div>
+                </div>
+                <div id="chart-area" class="chart-bars" style="margin-top:16px"></div>
+                <div class="chart-legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div> Admitted</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--rose)"></div> Critical</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Discharged</div>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">System Alerts</div>
+                    <span style="font-size:11px;color:var(--muted)">Live</span>
+                </div>
+                <div>
+                    <div class="alert-item">
+                        <div class="alert-icon" style="background:var(--rose-pale)">🚨</div>
+                        <div class="alert-text">
+                            <div class="msg">Critical patients need monitoring</div>
+                            <div class="time">Check ICU ward</div>
+                        </div>
+                    </div>
+                    <div class="alert-item">
+                        <div class="alert-icon" style="background:var(--amber-pale)">⚠️</div>
+                        <div class="alert-text">
+                            <div class="msg">Pending bill payments due</div>
+                            <div class="time">Finance → Billing</div>
+                        </div>
+                    </div>
+                    <div class="alert-item">
+                        <div class="alert-icon" style="background:var(--teal-pale)">📅</div>
+                        <div class="alert-text">
+                            <div class="msg" id="alert-appt-count">Appointments today</div>
+                            <div class="time">View schedule</div>
+                        </div>
+                    </div>
+                    <div class="alert-item">
+                        <div class="alert-icon" style="background:var(--green-pale)">✅</div>
+                        <div class="alert-text">
+                            <div class="msg">System running normally</div>
+                            <div class="time">All services operational</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script src="js/api.js"></script>
+<script>
+requireAuth();
+loadUserInfo();
+
+// Set date
+const d = new Date();
+document.getElementById('date-display').textContent =
+    d.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+async function loadDashboard() {
+    const res = await api.dashboardStats();
+    if (!res?.ok) return;
+    const data = res.data;
+
+    // Stats
+    document.getElementById('stat-total').textContent = data.totalPatients || 0;
+    document.getElementById('stat-appts').textContent = data.todayAppointments || 0;
+    document.getElementById('stat-critical').textContent = data.criticalPatients || 0;
+    document.getElementById('stat-revenue').textContent = formatCurrency(data.totalRevenue);
+    document.getElementById('alert-appt-count').textContent = `${data.todayAppointments || 0} appointments today`;
+
+    // Recent patients table
+    const tbody = document.getElementById('recent-patients');
+    const patients = data.recentPatients || [];
+    if (!patients.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="table-empty">No patients yet</td></tr>';
+    } else {
+        tbody.innerHTML = patients.map(p => `
+            <tr onclick="location.href='patients.html'" style="cursor:pointer">
+                <td>
+                    <div class="patient-cell">
+                        <div class="avatar" style="background:${randomColor(p.id)}">${initials(p.firstName, p.lastName)}</div>
+                        <div>
+                            <div class="cell-name">${p.firstName} ${p.lastName}</div>
+                            <div class="cell-sub">${p.patientId || ''}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>${statusBadge(p.status)}</td>
+                <td style="font-size:12px;color:var(--muted)">${p.assignedDoctorName || '—'}</td>
+                <td class="mono" style="font-size:11px;color:var(--muted)">${formatDate(p.createdAt)}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Today's appointments
+    const appts = data.todayAppointmentsList || [];
+    const apptEl = document.getElementById('today-appts');
+    if (!appts.length) {
+        apptEl.innerHTML = '<div class="table-empty">No appointments today</div>';
+    } else {
+        apptEl.innerHTML = appts.map(a => `
+            <div class="appt-item">
+                <div class="appt-time">${a.appointmentTime ? a.appointmentTime.slice(0,5) : '—'}</div>
+                <div class="appt-info">
+                    <div class="appt-name">${a.patientName}</div>
+                    <div class="appt-dept">${a.department || a.doctorSpecialization} · ${a.doctorName}</div>
+                </div>
+                ${statusBadge(a.status)}
+            </div>
+        `).join('');
+    }
+
+    // Chart
+    const admitted = data.admittedPatients || 0;
+    const critical = data.criticalPatients || 0;
+    const discharged = data.dischargedToday || 0;
+    const max = Math.max(admitted, critical, discharged, 1);
+    document.getElementById('chart-area').innerHTML = [
+        { label: 'Admitted', val: admitted, color: 'var(--teal)' },
+        { label: 'Critical', val: critical, color: 'var(--rose)' },
+        { label: 'Discharged', val: discharged, color: 'var(--green)' },
+        { label: 'Outpatient', val: data.totalPatients - admitted - critical - discharged, color: 'var(--amber)' },
+    ].map(d => `
+        <div class="bar-wrap">
+            <div class="bar" style="height:${Math.max(10, (d.val/max)*85)}px;background:${d.color};opacity:0.8" title="${d.label}: ${d.val}"></div>
+            <div class="bar-lbl">${d.label}</div>
+        </div>
+    `).join('');
+}
+
+function initials(f, l) { return ((f||'?')[0] + (l||'?')[0]).toUpperCase(); }
+const colors = ['#0f7c7c','#e8a040','#c94f6d','#9b59b6','#27ae60','#2980b9'];
+function randomColor(id) { return colors[id % colors.length]; }
+
+loadDashboard();
+</script>
+</body>
+</html>

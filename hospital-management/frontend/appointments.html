@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appointments — MediCare Pro</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-mark">
+            <div class="logo-icon">🏥</div>
+            <div><div class="logo-text">MediCare Pro</div><div class="logo-sub">Hospital Management</div></div>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section">Main</div>
+        <a class="nav-item" href="index.html"><span class="icon">📊</span> Dashboard</a>
+        <a class="nav-item" href="patients.html"><span class="icon">🧑‍⚕️</span> Patients</a>
+        <a class="nav-item active" href="appointments.html"><span class="icon">📅</span> Appointments</a>
+        <a class="nav-item" href="doctors.html"><span class="icon">👨‍⚕️</span> Doctors</a>
+        <div class="nav-section">Operations</div>
+        <a class="nav-item" href="billing.html"><span class="icon">🧾</span> Billing</a>
+        <div class="nav-section">Account</div>
+        <a class="nav-item" href="#" onclick="logout()"><span class="icon">🚪</span> Logout</a>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="user-card">
+            <div class="user-avatar" id="user-avatar">AD</div>
+            <div class="user-info">
+                <div class="user-name" id="user-name">Loading...</div>
+                <div class="user-role" id="user-role">—</div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<main class="main">
+    <header class="topbar">
+        <div class="page-title">Appointments</div>
+        <div style="flex:1"></div>
+        <button class="btn btn-primary" onclick="openAddModal()">＋ Schedule Appointment</button>
+    </header>
+    <div class="content">
+        <div class="toolbar">
+            <div class="filter-pills">
+                <div class="pill active" onclick="filterAppts('ALL',this)">All</div>
+                <div class="pill" onclick="filterAppts('TODAY',this)">Today</div>
+                <div class="pill" onclick="filterAppts('SCHEDULED',this)">Scheduled</div>
+                <div class="pill" onclick="filterAppts('CONFIRMED',this)">Confirmed</div>
+                <div class="pill" onclick="filterAppts('COMPLETED',this)">Completed</div>
+                <div class="pill" onclick="filterAppts('CANCELLED',this)">Cancelled</div>
+            </div>
+        </div>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Appt ID</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Date & Time</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Fee</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="appt-table">
+                    <tr><td colspan="8"><div class="loading"><div class="spinner"></div></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<!-- Appointment Modal -->
+<div id="appt-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <div class="modal-title" id="modal-title">Schedule Appointment</div>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="appt-id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Patient Name <span class="required">*</span></label>
+                    <input type="text" id="f-patientName" class="form-control" placeholder="Patient full name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Patient ID</label>
+                    <input type="number" id="f-patientId" class="form-control" placeholder="Patient system ID">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Doctor Name <span class="required">*</span></label>
+                    <input type="text" id="f-doctorName" class="form-control" placeholder="Dr. Name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Doctor ID</label>
+                    <input type="number" id="f-doctorId" class="form-control" placeholder="Doctor system ID">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Specialization</label>
+                    <input type="text" id="f-spec" class="form-control" placeholder="e.g. Cardiology">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <input type="text" id="f-dept" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date <span class="required">*</span></label>
+                    <input type="date" id="f-date" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Time <span class="required">*</span></label>
+                    <input type="time" id="f-time" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Type <span class="required">*</span></label>
+                    <select id="f-type" class="form-control">
+                        <option value="CONSULTATION">Consultation</option>
+                        <option value="FOLLOW_UP">Follow Up</option>
+                        <option value="EMERGENCY">Emergency</option>
+                        <option value="PROCEDURE">Procedure</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select id="f-status" class="form-control">
+                        <option value="SCHEDULED">Scheduled</option>
+                        <option value="CONFIRMED">Confirmed</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="CANCELLED">Cancelled</option>
+                        <option value="NO_SHOW">No Show</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Fee (₹)</label>
+                    <input type="number" id="f-fee" class="form-control" min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Paid?</label>
+                    <select id="f-paid" class="form-control">
+                        <option value="false">No</option>
+                        <option value="true">Yes</option>
+                    </select>
+                </div>
+                <div class="form-group form-full">
+                    <label class="form-label">Reason</label>
+                    <textarea id="f-reason" class="form-control" placeholder="Reason for appointment..."></textarea>
+                </div>
+                <div class="form-group form-full">
+                    <label class="form-label">Diagnosis / Notes</label>
+                    <textarea id="f-notes" class="form-control" placeholder="Doctor's notes, diagnosis..."></textarea>
+                </div>
+                <div class="form-group form-full">
+                    <label class="form-label">Prescription</label>
+                    <textarea id="f-prescription" class="form-control" placeholder="Medicines prescribed..."></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveAppt()">Save Appointment</button>
+        </div>
+    </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+requireAuth(); loadUserInfo();
+let allAppts = [];
+
+async function loadAppts() {
+    const res = await api.getAppointments();
+    if (!res?.ok) return;
+    allAppts = res.data;
+    renderTable(allAppts);
+}
+
+const today = new Date().toISOString().split('T')[0];
+
+function renderTable(appts) {
+    const tbody = document.getElementById('appt-table');
+    if (!appts.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="table-empty">No appointments found</td></tr>';
+        return;
+    }
+    tbody.innerHTML = appts.map(a => `
+        <tr>
+            <td class="mono" style="font-size:11px">${a.appointmentId || '#'+a.id}</td>
+            <td>
+                <div class="cell-name">${a.patientName}</div>
+            </td>
+            <td>
+                <div style="font-size:13px">${a.doctorName}</div>
+                <div style="font-size:11px;color:var(--muted)">${a.doctorSpecialization || ''}</div>
+            </td>
+            <td>
+                <div style="font-size:13px;font-weight:600">${formatDate(a.appointmentDate)}</div>
+                <div class="mono" style="font-size:11px;color:var(--teal)">${a.appointmentTime ? a.appointmentTime.slice(0,5) : '—'}</div>
+            </td>
+            <td><span style="font-size:12px;background:var(--bg);padding:3px 8px;border-radius:6px">${a.type || '—'}</span></td>
+            <td>${statusBadge(a.status)}</td>
+            <td style="font-weight:600">${a.fee ? '₹'+a.fee : '—'}</td>
+            <td>
+                <div style="display:flex;gap:6px">
+                    <button class="btn-icon-sm" onclick="editAppt(${a.id})" title="Edit">✏️</button>
+                    <button class="btn-icon-sm" onclick="deleteAppt(${a.id})" title="Delete" style="color:var(--rose)">🗑️</button>
+                    ${a.status === 'SCHEDULED' || a.status === 'CONFIRMED' ? `<button class="btn-icon-sm" onclick="completeAppt(${a.id})" title="Complete" style="color:var(--green)">✅</button>` : ''}
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function filterAppts(filter, el) {
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    if (filter === 'ALL') renderTable(allAppts);
+    else if (filter === 'TODAY') renderTable(allAppts.filter(a => a.appointmentDate === today));
+    else renderTable(allAppts.filter(a => a.status === filter));
+}
+
+function openAddModal() {
+    document.getElementById('modal-title').textContent = 'Schedule Appointment';
+    document.getElementById('appt-id').value = '';
+    ['patientName','patientId','doctorName','doctorId','spec','dept','date','time','type','status','fee','paid','reason','notes','prescription']
+        .forEach(f => { const el = document.getElementById('f-'+f); if(el) el.value = ''; });
+    document.getElementById('f-type').value = 'CONSULTATION';
+    document.getElementById('f-status').value = 'SCHEDULED';
+    document.getElementById('f-date').value = today;
+    document.getElementById('appt-modal').style.display = 'flex';
+}
+
+function editAppt(id) {
+    const a = allAppts.find(x => x.id === id);
+    if (!a) return;
+    document.getElementById('modal-title').textContent = 'Edit Appointment';
+    document.getElementById('appt-id').value = id;
+    document.getElementById('f-patientName').value = a.patientName || '';
+    document.getElementById('f-patientId').value = a.patientId || '';
+    document.getElementById('f-doctorName').value = a.doctorName || '';
+    document.getElementById('f-doctorId').value = a.doctorId || '';
+    document.getElementById('f-spec').value = a.doctorSpecialization || '';
+    document.getElementById('f-dept').value = a.department || '';
+    document.getElementById('f-date').value = a.appointmentDate || '';
+    document.getElementById('f-time').value = a.appointmentTime ? a.appointmentTime.slice(0,5) : '';
+    document.getElementById('f-type').value = a.type || 'CONSULTATION';
+    document.getElementById('f-status').value = a.status || 'SCHEDULED';
+    document.getElementById('f-fee').value = a.fee || '';
+    document.getElementById('f-paid').value = a.isPaid ? 'true' : 'false';
+    document.getElementById('f-reason').value = a.reason || '';
+    document.getElementById('f-notes').value = a.notes || '';
+    document.getElementById('f-prescription').value = a.prescription || '';
+    document.getElementById('appt-modal').style.display = 'flex';
+}
+
+async function saveAppt() {
+    const id = document.getElementById('appt-id').value;
+    const data = {
+        patientName: document.getElementById('f-patientName').value.trim(),
+        patientId: parseInt(document.getElementById('f-patientId').value) || 1,
+        doctorName: document.getElementById('f-doctorName').value.trim(),
+        doctorId: parseInt(document.getElementById('f-doctorId').value) || 1,
+        doctorSpecialization: document.getElementById('f-spec').value,
+        department: document.getElementById('f-dept').value,
+        appointmentDate: document.getElementById('f-date').value,
+        appointmentTime: document.getElementById('f-time').value + ':00',
+        type: document.getElementById('f-type').value,
+        status: document.getElementById('f-status').value,
+        fee: parseFloat(document.getElementById('f-fee').value) || 0,
+        isPaid: document.getElementById('f-paid').value === 'true',
+        reason: document.getElementById('f-reason').value,
+        notes: document.getElementById('f-notes').value,
+        prescription: document.getElementById('f-prescription').value,
+    };
+    if (!data.patientName || !data.appointmentDate || !data.appointmentTime) {
+        showToast('Fill required fields', 'warning'); return;
+    }
+    const res = id ? await api.updateAppointment(id, data) : await api.createAppointment(data);
+    if (res?.ok) { showToast(id ? 'Appointment updated!' : 'Appointment scheduled!'); closeModal(); loadAppts(); }
+    else showToast(res?.data?.message || 'Error saving appointment', 'error');
+}
+
+async function deleteAppt(id) {
+    if (!confirm('Delete this appointment?')) return;
+    const res = await api.deleteAppointment(id);
+    if (res?.ok) { showToast('Appointment deleted'); loadAppts(); }
+}
+
+async function completeAppt(id) {
+    const res = await api.updateAppointmentStatus(id, 'COMPLETED');
+    if (res?.ok) { showToast('Appointment completed'); loadAppts(); }
+}
+
+function closeModal() { document.getElementById('appt-modal').style.display = 'none'; }
+loadAppts();
+</script>
+</body>
+</html>

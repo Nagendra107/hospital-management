@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patients — MediCare Pro</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-mark">
+            <div class="logo-icon">🏥</div>
+            <div><div class="logo-text">MediCare Pro</div><div class="logo-sub">Hospital Management</div></div>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section">Main</div>
+        <a class="nav-item" href="index.html"><span class="icon">📊</span> Dashboard</a>
+        <a class="nav-item active" href="patients.html"><span class="icon">🧑‍⚕️</span> Patients</a>
+        <a class="nav-item" href="appointments.html"><span class="icon">📅</span> Appointments</a>
+        <a class="nav-item" href="doctors.html"><span class="icon">👨‍⚕️</span> Doctors</a>
+        <div class="nav-section">Operations</div>
+        <a class="nav-item" href="billing.html"><span class="icon">🧾</span> Billing</a>
+        <div class="nav-section">Account</div>
+        <a class="nav-item" href="#" onclick="logout()"><span class="icon">🚪</span> Logout</a>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="user-card">
+            <div class="user-avatar" id="user-avatar">AD</div>
+            <div class="user-info">
+                <div class="user-name" id="user-name">Loading...</div>
+                <div class="user-role" id="user-role">—</div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<main class="main">
+    <header class="topbar">
+        <div class="page-title">Patients</div>
+        <div style="flex:1"></div>
+        <div class="topbar-actions">
+            <button class="btn btn-primary" onclick="openAddModal()">＋ Add Patient</button>
+        </div>
+    </header>
+
+    <div class="content">
+        <!-- Filter & Search -->
+        <div class="toolbar">
+            <div class="search-bar" style="flex:1;max-width:340px">
+                <span>🔍</span>
+                <input type="text" id="search-input" placeholder="Search patients..." oninput="debounceSearch(this.value)">
+            </div>
+            <div class="filter-pills">
+                <div class="pill active" onclick="filterByStatus('ALL', this)">All</div>
+                <div class="pill" onclick="filterByStatus('ADMITTED', this)">Admitted</div>
+                <div class="pill" onclick="filterByStatus('CRITICAL', this)">Critical</div>
+                <div class="pill" onclick="filterByStatus('OBSERVATION', this)">Observation</div>
+                <div class="pill" onclick="filterByStatus('DISCHARGED', this)">Discharged</div>
+                <div class="pill" onclick="filterByStatus('OUTPATIENT', this)">Outpatient</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Contact</th>
+                        <th>Blood Group</th>
+                        <th>Status</th>
+                        <th>Doctor</th>
+                        <th>Ward/Bed</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="patients-table">
+                    <tr><td colspan="7"><div class="loading"><div class="spinner"></div></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<!-- Add/Edit Patient Modal -->
+<div id="patient-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <div class="modal-title" id="modal-title">Add New Patient</div>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="patient-id">
+            <div class="section-title">Personal Information</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">First Name <span class="required">*</span></label>
+                    <input type="text" id="f-firstName" class="form-control" placeholder="First name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Last Name <span class="required">*</span></label>
+                    <input type="text" id="f-lastName" class="form-control" placeholder="Last name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email <span class="required">*</span></label>
+                    <input type="email" id="f-email" class="form-control" placeholder="email@example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="text" id="f-phone" class="form-control" placeholder="10 digit number">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date of Birth <span class="required">*</span></label>
+                    <input type="date" id="f-dob" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Gender <span class="required">*</span></label>
+                    <select id="f-gender" class="form-control">
+                        <option value="">Select gender</option>
+                        <option>Male</option><option>Female</option><option>Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Blood Group</label>
+                    <select id="f-bloodGroup" class="form-control">
+                        <option value="">Select blood group</option>
+                        <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                        <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select id="f-status" class="form-control">
+                        <option value="OUTPATIENT">Outpatient</option>
+                        <option value="ADMITTED">Admitted</option>
+                        <option value="CRITICAL">Critical</option>
+                        <option value="OBSERVATION">Observation</option>
+                        <option value="DISCHARGED">Discharged</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="section-title">Address</div>
+            <div class="form-grid">
+                <div class="form-group form-full">
+                    <label class="form-label">Address</label>
+                    <input type="text" id="f-address" class="form-control" placeholder="Street address">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">City</label>
+                    <input type="text" id="f-city" class="form-control" placeholder="City">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">State</label>
+                    <input type="text" id="f-state" class="form-control" placeholder="State">
+                </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="section-title">Medical Information</div>
+            <div class="form-grid">
+                <div class="form-group form-full">
+                    <label class="form-label">Medical History</label>
+                    <textarea id="f-medicalHistory" class="form-control" placeholder="Previous conditions, surgeries..."></textarea>
+                </div>
+                <div class="form-group form-full">
+                    <label class="form-label">Allergies</label>
+                    <textarea id="f-allergies" class="form-control" placeholder="Known allergies..." style="min-height:60px"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Assigned Doctor</label>
+                    <input type="text" id="f-doctor" class="form-control" placeholder="Doctor name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ward / Bed</label>
+                    <input type="text" id="f-ward" class="form-control" placeholder="e.g. ICU / Bed-4">
+                </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="section-title">Emergency Contact</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Contact Name</label>
+                    <input type="text" id="f-ecName" class="form-control" placeholder="Contact person name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Contact Phone</label>
+                    <input type="text" id="f-ecPhone" class="form-control" placeholder="Emergency phone">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="savePatient()">Save Patient</button>
+        </div>
+    </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+requireAuth();
+loadUserInfo();
+
+let allPatients = [];
+let currentFilter = 'ALL';
+
+async function loadPatients() {
+    const res = await api.getPatients();
+    if (!res?.ok) { showToast('Failed to load patients', 'error'); return; }
+    allPatients = res.data;
+    renderTable(allPatients);
+}
+
+function renderTable(patients) {
+    const tbody = document.getElementById('patients-table');
+    if (!patients.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="table-empty">No patients found</td></tr>';
+        return;
+    }
+    tbody.innerHTML = patients.map(p => `
+        <tr>
+            <td>
+                <div class="patient-cell">
+                    <div class="avatar" style="background:${randomColor(p.id)}">${initials(p.firstName,p.lastName)}</div>
+                    <div>
+                        <div class="cell-name">${p.firstName} ${p.lastName}</div>
+                        <div class="cell-sub">${p.patientId || ''}</div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div style="font-size:12px">${p.email}</div>
+                <div class="mono" style="font-size:11px;color:var(--muted)">${p.phone || '—'}</div>
+            </td>
+            <td><span style="font-weight:700;color:var(--rose)">${p.bloodGroup || '—'}</span></td>
+            <td>${statusBadge(p.status)}</td>
+            <td style="font-size:12px">${p.assignedDoctorName || '—'}</td>
+            <td style="font-size:12px">${p.ward ? `${p.ward} / ${p.bedNumber||''}` : '—'}</td>
+            <td>
+                <div style="display:flex;gap:6px">
+                    <button class="btn-icon-sm" onclick="editPatient(${p.id})" title="Edit">✏️</button>
+                    <button class="btn-icon-sm" onclick="deletePatient(${p.id})" title="Delete" style="color:var(--rose)">🗑️</button>
+                    ${p.status !== 'DISCHARGED' && p.status !== 'ADMITTED' ? `<button class="btn-icon-sm" onclick="admitPatient(${p.id})" title="Admit">🛏️</button>` : ''}
+                    ${p.status === 'ADMITTED' || p.status === 'CRITICAL' || p.status === 'OBSERVATION' ? `<button class="btn-icon-sm" onclick="dischargePatient(${p.id})" title="Discharge">✅</button>` : ''}
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function filterByStatus(status, el) {
+    currentFilter = status;
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    const filtered = status === 'ALL' ? allPatients : allPatients.filter(p => p.status === status);
+    renderTable(filtered);
+}
+
+let searchTimeout;
+function debounceSearch(q) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(async () => {
+        if (q.length < 2) { renderTable(allPatients); return; }
+        const res = await api.searchPatients(q);
+        if (res?.ok) renderTable(res.data);
+    }, 400);
+}
+
+function openAddModal() {
+    document.getElementById('modal-title').textContent = 'Add New Patient';
+    document.getElementById('patient-id').value = '';
+    ['firstName','lastName','email','phone','dob','gender','bloodGroup','status','address','city','state','medicalHistory','allergies','doctor','ward','ecName','ecPhone']
+        .forEach(f => { const el = document.getElementById('f-'+f); if (el) el.value = ''; });
+    document.getElementById('f-status').value = 'OUTPATIENT';
+    document.getElementById('patient-modal').style.display = 'flex';
+}
+
+function editPatient(id) {
+    const p = allPatients.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('modal-title').textContent = 'Edit Patient';
+    document.getElementById('patient-id').value = id;
+    document.getElementById('f-firstName').value = p.firstName || '';
+    document.getElementById('f-lastName').value = p.lastName || '';
+    document.getElementById('f-email').value = p.email || '';
+    document.getElementById('f-phone').value = p.phone || '';
+    document.getElementById('f-dob').value = p.dateOfBirth || '';
+    document.getElementById('f-gender').value = p.gender || '';
+    document.getElementById('f-bloodGroup').value = p.bloodGroup || '';
+    document.getElementById('f-status').value = p.status || 'OUTPATIENT';
+    document.getElementById('f-address').value = p.address || '';
+    document.getElementById('f-city').value = p.city || '';
+    document.getElementById('f-state').value = p.state || '';
+    document.getElementById('f-medicalHistory').value = p.medicalHistory || '';
+    document.getElementById('f-allergies').value = p.allergies || '';
+    document.getElementById('f-doctor').value = p.assignedDoctorName || '';
+    document.getElementById('f-ward').value = p.ward || '';
+    document.getElementById('f-ecName').value = p.emergencyContactName || '';
+    document.getElementById('f-ecPhone').value = p.emergencyContactPhone || '';
+    document.getElementById('patient-modal').style.display = 'flex';
+}
+
+async function savePatient() {
+    const id = document.getElementById('patient-id').value;
+    const data = {
+        firstName: document.getElementById('f-firstName').value.trim(),
+        lastName: document.getElementById('f-lastName').value.trim(),
+        email: document.getElementById('f-email').value.trim(),
+        phone: document.getElementById('f-phone').value.trim(),
+        dateOfBirth: document.getElementById('f-dob').value,
+        gender: document.getElementById('f-gender').value,
+        bloodGroup: document.getElementById('f-bloodGroup').value,
+        status: document.getElementById('f-status').value,
+        address: document.getElementById('f-address').value,
+        city: document.getElementById('f-city').value,
+        state: document.getElementById('f-state').value,
+        medicalHistory: document.getElementById('f-medicalHistory').value,
+        allergies: document.getElementById('f-allergies').value,
+        assignedDoctorName: document.getElementById('f-doctor').value,
+        ward: document.getElementById('f-ward').value,
+        emergencyContactName: document.getElementById('f-ecName').value,
+        emergencyContactPhone: document.getElementById('f-ecPhone').value,
+    };
+
+    if (!data.firstName || !data.lastName || !data.email || !data.dateOfBirth || !data.gender) {
+        showToast('Please fill required fields', 'warning'); return;
+    }
+
+    const res = id ? await api.updatePatient(id, data) : await api.createPatient(data);
+    if (res?.ok) {
+        showToast(id ? 'Patient updated!' : 'Patient added!');
+        closeModal(); loadPatients();
+    } else {
+        showToast(res?.data?.message || 'Error saving patient', 'error');
+    }
+}
+
+async function deletePatient(id) {
+    if (!confirm('Delete this patient? This action cannot be undone.')) return;
+    const res = await api.deletePatient(id);
+    if (res?.ok) { showToast('Patient deleted'); loadPatients(); }
+    else showToast('Error deleting patient', 'error');
+}
+
+async function admitPatient(id) {
+    const ward = prompt('Enter ward name:');
+    if (!ward) return;
+    const bed = prompt('Enter bed number:');
+    const doctor = prompt('Assigned doctor name:');
+    const res = await api.admitPatient(id, { ward, bedNumber: bed, doctorName: doctor });
+    if (res?.ok) { showToast('Patient admitted!'); loadPatients(); }
+    else showToast('Error admitting patient', 'error');
+}
+
+async function dischargePatient(id) {
+    if (!confirm('Discharge this patient?')) return;
+    const res = await api.dischargePatient(id);
+    if (res?.ok) { showToast('Patient discharged'); loadPatients(); }
+    else showToast('Error discharging patient', 'error');
+}
+
+function closeModal() { document.getElementById('patient-modal').style.display = 'none'; }
+const colors = ['#0f7c7c','#e8a040','#c94f6d','#9b59b6','#27ae60','#2980b9'];
+function randomColor(id) { return colors[id % colors.length]; }
+function initials(f, l) { return ((f||'?')[0] + (l||'?')[0]).toUpperCase(); }
+
+loadPatients();
+</script>
+</body>
+</html>

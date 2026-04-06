@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile — MediCare Pro</title>
+<link rel="stylesheet" href="css/portal.css">
+</head>
+<body>
+
+<nav class="portal-nav">
+    <a href="portal-dashboard.html" class="nav-logo">
+        <div class="nav-logo-icon">🏥</div>
+        <div><div class="nav-logo-text">MediCare Pro</div><div class="nav-logo-sub">Patient Portal</div></div>
+    </a>
+    <div class="nav-links">
+        <a href="portal-dashboard.html" class="nav-link">🏠 Dashboard</a>
+        <a href="portal-appointments.html" class="nav-link">📅 Appointments</a>
+        <a href="portal-doctors.html" class="nav-link">👨‍⚕️ Doctors</a>
+        <a href="portal-bills.html" class="nav-link">🧾 My Bills</a>
+        <a href="portal-profile.html" class="nav-link active">👤 Profile</a>
+    </div>
+    <div class="nav-right">
+        <div class="nav-user">
+            <div class="nav-avatar" id="nav-avatar">P</div>
+            <div class="nav-user-name" id="nav-user-name">Patient</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="portalLogout()">Logout</button>
+    </div>
+</nav>
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="page-title">👤 My Profile</div>
+        <div class="page-subtitle">Manage your personal and health information</div>
+    </div>
+
+    <div class="grid-2" style="gap:24px;align-items:start">
+
+        <!-- Left: Profile Card -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+
+            <!-- Profile Summary -->
+            <div class="card">
+                <div style="padding:28px;text-align:center">
+                    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:#fff;margin:0 auto 16px" id="profile-avatar">P</div>
+                    <div style="font-family:'Lora',serif;font-size:20px;font-weight:700" id="profile-name">Loading...</div>
+                    <div style="font-size:13px;color:var(--muted);margin-top:4px" id="profile-email">—</div>
+                    <div style="margin-top:12px" id="profile-id-badge"></div>
+                </div>
+                <div style="border-top:1px solid var(--border);padding:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center">
+                    <div>
+                        <div style="font-size:20px;font-weight:800;color:var(--rose)" id="blood-group-display">—</div>
+                        <div style="font-size:11px;color:var(--muted);font-weight:700">Blood Group</div>
+                    </div>
+                    <div>
+                        <div style="font-size:16px;font-weight:800;color:var(--text)" id="gender-display">—</div>
+                        <div style="font-size:11px;color:var(--muted);font-weight:700">Gender</div>
+                    </div>
+                    <div>
+                        <div style="font-size:16px;font-weight:800;color:var(--primary)" id="dob-display">—</div>
+                        <div style="font-size:11px;color:var(--muted);font-weight:700">Date of Birth</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Change Password -->
+            <div class="card">
+                <div class="card-header"><div class="card-title">🔐 Change Password</div></div>
+                <div style="padding:20px">
+                    <div id="pwd-error" class="error-box"></div>
+                    <div id="pwd-success" class="success-box"></div>
+                    <div class="form-group">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" id="old-pwd" class="form-control" placeholder="Current password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" id="new-pwd" class="form-control" placeholder="New password (min 6 chars)">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" id="confirm-pwd" class="form-control" placeholder="Repeat new password">
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="changePassword()">Update Password</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right: Edit Profile Form -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">✏️ Edit Profile</div>
+                <div id="save-status" style="font-size:12px;color:var(--green);font-weight:700;display:none">✅ Saved!</div>
+            </div>
+            <div style="padding:24px">
+                <div id="form-error" class="error-box"></div>
+
+                <div class="section-title">Personal Information</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">First Name <span class="required">*</span></label>
+                        <input type="text" id="f-firstName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name <span class="required">*</span></label>
+                        <input type="text" id="f-lastName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input type="text" id="f-phone" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" id="f-dob" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select id="f-gender" class="form-control">
+                            <option value="">Select</option>
+                            <option>Male</option><option>Female</option><option>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Blood Group</label>
+                        <select id="f-bloodGroup" class="form-control">
+                            <option value="">Select</option>
+                            <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                            <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+                <div class="section-title">📍 Address</div>
+                <div class="form-group">
+                    <label class="form-label">Address</label>
+                    <input type="text" id="f-address" class="form-control">
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">City</label>
+                        <input type="text" id="f-city" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">State</label>
+                        <input type="text" id="f-state" class="form-control">
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+                <div class="section-title">🩺 Medical Information</div>
+                <div class="form-group">
+                    <label class="form-label">Medical History</label>
+                    <textarea id="f-medicalHistory" class="form-control" placeholder="Previous conditions, surgeries..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Allergies</label>
+                    <textarea id="f-allergies" class="form-control" placeholder="Known allergies..." style="min-height:60px"></textarea>
+                </div>
+
+                <div class="divider"></div>
+                <div class="section-title">🆘 Emergency Contact</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Contact Name</label>
+                        <input type="text" id="f-ecName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contact Phone</label>
+                        <input type="text" id="f-ecPhone" class="form-control">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="saveProfile()">
+                    💾 Save Profile
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="js/portal-api.js"></script>
+<script>
+const user = requirePatientAuth();
+loadNavUser();
+
+async function loadProfile() {
+    const res = await portalApi.getProfile(user.id);
+    if (!res?.ok) return;
+    const p = res.data;
+
+    // Summary card
+    const initials = ((p.firstName||'P')[0] + (p.lastName||'')[0]).toUpperCase();
+    document.getElementById('profile-avatar').textContent = initials;
+    document.getElementById('profile-name').textContent = `${p.firstName} ${p.lastName}`;
+    document.getElementById('profile-email').textContent = p.email;
+    document.getElementById('blood-group-display').textContent = p.bloodGroup || '—';
+    document.getElementById('gender-display').textContent = p.gender || '—';
+    document.getElementById('dob-display').textContent = p.dateOfBirth || '—';
+    document.getElementById('profile-id-badge').innerHTML = `<span style="background:var(--primary-pale);color:var(--primary);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px">${p.email}</span>`;
+
+    // Form
+    document.getElementById('f-firstName').value = p.firstName || '';
+    document.getElementById('f-lastName').value = p.lastName || '';
+    document.getElementById('f-phone').value = p.phone || '';
+    document.getElementById('f-dob').value = p.dateOfBirth || '';
+    document.getElementById('f-gender').value = p.gender || '';
+    document.getElementById('f-bloodGroup').value = p.bloodGroup || '';
+    document.getElementById('f-address').value = p.address || '';
+    document.getElementById('f-city').value = p.city || '';
+    document.getElementById('f-state').value = p.state || '';
+    document.getElementById('f-medicalHistory').value = p.medicalHistory || '';
+    document.getElementById('f-allergies').value = p.allergies || '';
+    document.getElementById('f-ecName').value = p.emergencyContactName || '';
+    document.getElementById('f-ecPhone').value = p.emergencyContactPhone || '';
+}
+
+async function saveProfile() {
+    const errEl = document.getElementById('form-error');
+    const statusEl = document.getElementById('save-status');
+    errEl.style.display = 'none';
+
+    const data = {
+        firstName: document.getElementById('f-firstName').value.trim(),
+        lastName: document.getElementById('f-lastName').value.trim(),
+        phone: document.getElementById('f-phone').value,
+        dateOfBirth: document.getElementById('f-dob').value || null,
+        gender: document.getElementById('f-gender').value,
+        bloodGroup: document.getElementById('f-bloodGroup').value,
+        address: document.getElementById('f-address').value,
+        city: document.getElementById('f-city').value,
+        state: document.getElementById('f-state').value,
+        medicalHistory: document.getElementById('f-medicalHistory').value,
+        allergies: document.getElementById('f-allergies').value,
+        emergencyContactName: document.getElementById('f-ecName').value,
+        emergencyContactPhone: document.getElementById('f-ecPhone').value,
+    };
+
+    if (!data.firstName || !data.lastName) {
+        errEl.textContent = 'First and last name are required';
+        errEl.style.display = 'block'; return;
+    }
+
+    const res = await portalApi.updateProfile(user.id, data);
+    if (res?.ok) {
+        showToast('Profile updated successfully!');
+        statusEl.style.display = 'block';
+        setTimeout(() => statusEl.style.display = 'none', 3000);
+        // Update local storage
+        const updatedUser = { ...user, firstName: data.firstName, lastName: data.lastName };
+        localStorage.setItem('portal_user', JSON.stringify(updatedUser));
+        loadNavUser();
+        loadProfile();
+    } else {
+        errEl.textContent = res?.data?.message || 'Error saving profile';
+        errEl.style.display = 'block';
+    }
+}
+
+async function changePassword() {
+    const errEl = document.getElementById('pwd-error');
+    const sucEl = document.getElementById('pwd-success');
+    errEl.style.display = 'none';
+    sucEl.style.display = 'none';
+
+    const oldPwd = document.getElementById('old-pwd').value;
+    const newPwd = document.getElementById('new-pwd').value;
+    const confirmPwd = document.getElementById('confirm-pwd').value;
+
+    if (!oldPwd || !newPwd) { errEl.textContent = 'Fill all password fields'; errEl.style.display = 'block'; return; }
+    if (newPwd.length < 6) { errEl.textContent = 'New password must be at least 6 characters'; errEl.style.display = 'block'; return; }
+    if (newPwd !== confirmPwd) { errEl.textContent = 'New passwords do not match'; errEl.style.display = 'block'; return; }
+
+    const res = await portalApi.changePassword(user.id, { oldPassword: oldPwd, newPassword: newPwd });
+
+    if (res?.ok) {
+        sucEl.textContent = '✅ Password changed successfully!';
+        sucEl.style.display = 'block';
+        document.getElementById('old-pwd').value = '';
+        document.getElementById('new-pwd').value = '';
+        document.getElementById('confirm-pwd').value = '';
+    } else {
+        errEl.textContent = res?.data?.message || 'Error changing password';
+        errEl.style.display = 'block';
+    }
+}
+
+loadProfile();
+</script>
+</body>
+</html>

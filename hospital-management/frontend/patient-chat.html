@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Doctor — MediCare Pro</title>
+    <link rel="stylesheet" href="css/portal.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Segoe UI',sans-serif;background:#f8fafc;height:100vh;overflow:hidden}
+        .chat-layout{display:flex;height:calc(100vh - 56px)}
+        .sidebar{width:280px;min-width:280px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column}
+        .sidebar-header{padding:16px;background:linear-gradient(135deg,#4f46e5,#7c3aed)}
+        .sidebar-header h3{color:#fff;font-size:15px;font-weight:600}
+        .sidebar-header p{color:rgba(255,255,255,.8);font-size:11px;margin-top:3px}
+        .search-box{padding:10px 16px;border-bottom:1px solid #e2e8f0}
+        .search-box input{width:100%;padding:7px 12px;border:1px solid #e2e8f0;border-radius:20px;font-size:12px;outline:none;background:#f8fafc;color:#1e293b}
+        .search-box input:focus{border-color:#4f46e5}
+        .doctor-list{overflow-y:auto;flex:1}
+        .doctor-item{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;border-bottom:1px solid #f1f5f9;transition:background .15s}
+        .doctor-item:hover{background:#f8fafc}
+        .doctor-item.active{background:#ede9fe;border-left:3px solid #4f46e5}
+        .doc-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:14px;flex-shrink:0;position:relative}
+        .odot{width:10px;height:10px;background:#10b981;border-radius:50%;border:2px solid #fff;position:absolute;bottom:0;right:0}
+        .doc-info{flex:1;min-width:0}
+        .doc-name{font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .doc-spec{font-size:11px;color:#94a3b8}
+        .doc-prev{font-size:11px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+        .chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+        .chat-hdr{padding:14px 20px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:12px}
+        .hdr-av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:16px;position:relative;flex-shrink:0}
+        .hdr-name{font-size:15px;font-weight:700;color:#1e293b}
+        .hdr-status{font-size:12px;color:#10b981}
+        .ai-badge{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;margin-left:auto}
+        .msgs{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+        .msgs::-webkit-scrollbar{width:4px}
+        .msgs::-webkit-scrollbar-thumb{background:#cbd5e0;border-radius:2px}
+        .mrow{display:flex;gap:10px;max-width:72%}
+        .mrow.pat{align-self:flex-end;flex-direction:row-reverse}
+        .mrow.doc{align-self:flex-start}
+        .mav{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;margin-top:2px}
+        .doc .mav{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff}
+        .pat .mav{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+        .mcontent{display:flex;flex-direction:column}
+        .mbub{padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.6;word-wrap:break-word}
+        .doc .mbub{background:#fff;border:1px solid #e2e8f0;border-bottom-left-radius:4px;color:#1e293b}
+        .pat .mbub{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-bottom-right-radius:4px}
+        .mmeta{font-size:10px;color:#94a3b8;margin-top:4px;display:flex;align-items:center;gap:4px}
+        .pat .mmeta{justify-content:flex-end}
+        .ai-tag{background:#ede9fe;color:#4f46e5;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600}
+        .typing-row{display:none;align-self:flex-start;gap:10px}
+        .tbub{background:#fff;border:1px solid #e2e8f0;border-radius:16px;border-bottom-left-radius:4px;padding:12px 16px;display:flex;gap:4px;align-items:center}
+        .dot{width:7px;height:7px;border-radius:50%;background:#94a3b8;animation:b 1.4s infinite}
+        .dot:nth-child(2){animation-delay:.2s}
+        .dot:nth-child(3){animation-delay:.4s}
+        @keyframes b{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+        .qr-bar{padding:10px 20px;display:flex;flex-wrap:wrap;gap:8px;background:#fff;border-top:1px solid #e2e8f0}
+        .qr-btn{background:#f8fafc;border:1px solid #e2e8f0;border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;color:#1e293b;transition:all .15s;white-space:nowrap}
+        .qr-btn:hover{background:#ede9fe;border-color:#4f46e5;color:#4f46e5}
+        .inp-area{padding:12px 20px;background:#fff;border-top:1px solid #e2e8f0;display:flex;align-items:flex-end;gap:10px}
+        .cinp{flex:1;border:1.5px solid #e2e8f0;border-radius:22px;padding:10px 16px;font-size:13px;resize:none;max-height:100px;outline:none;font-family:inherit;line-height:1.5;background:#f8fafc;color:#1e293b;transition:border-color .2s}
+        .cinp:focus{border-color:#4f46e5;background:#fff}
+        .sbtn{width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;transition:transform .15s}
+        .sbtn:hover{transform:scale(1.08)}
+        .sbtn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .disclaimer{background:#fffbeb;border-top:1px solid #fde68a;padding:6px 20px;font-size:11px;color:#92400e;text-align:center}
+        .no-doc{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;text-align:center;padding:40px}
+        .portal-nav{background:#fff;border-bottom:1px solid #e2e8f0;padding:0 20px;display:flex;align-items:center;gap:16px;height:56px}
+        .nav-brand{font-weight:700;font-size:15px;color:#4f46e5;display:flex;align-items:center;gap:8px;white-space:nowrap}
+        .nav-links{display:flex;gap:2px;flex:1;overflow-x:auto}
+        .nav-link{padding:5px 10px;border-radius:8px;font-size:12px;color:#64748b;text-decoration:none;white-space:nowrap;transition:all .15s}
+        .nav-link:hover,.nav-link.active{background:#ede9fe;color:#4f46e5}
+        .nav-user{display:flex;align-items:center;gap:8px;font-size:13px;color:#1e293b;white-space:nowrap}
+        .nav-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:12px}
+        .lbtn{padding:5px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;cursor:pointer;background:#fff;color:#64748b}
+        .lbtn:hover{background:#fee2e2;border-color:#fca5a5;color:#dc2626}
+    </style>
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="nav-brand">🏥 MediCare Pro</div>
+    <div class="nav-links">
+        <a href="portal-dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="portal-appointments.html" class="nav-link">📅 Appointments</a>
+        <a href="portal-doctors.html" class="nav-link">👨‍⚕️ Doctors</a>
+        <a href="patient-chat.html" class="nav-link active">💬 Chat</a>
+        <a href="portal-bills.html" class="nav-link">💳 Bills</a>
+        <a href="portal-profile.html" class="nav-link">👤 Profile</a>
+    </div>
+    <div class="nav-user">
+        <div class="nav-av" id="nav-av">P</div>
+        <span id="nav-name">Patient</span>
+        <button class="lbtn" onclick="localStorage.clear();window.location.href='portal-login.html'">Logout</button>
+    </div>
+</nav>
+
+<div class="chat-layout">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>💬 My Doctors</h3>
+            <p>Select a doctor to start chatting</p>
+        </div>
+        <div class="search-box">
+            <input type="text" placeholder="Search doctors..." oninput="filterDocs(this.value)">
+        </div>
+        <div class="doctor-list" id="doc-list">
+            <div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">Loading...</div>
+        </div>
+    </div>
+    <div class="chat-main" id="chat-main">
+        <div class="no-doc">
+            <div style="font-size:64px;margin-bottom:16px">👨‍⚕️</div>
+            <h3 style="font-size:18px;color:#64748b;margin-bottom:8px">Select a Doctor</h3>
+            <p style="font-size:14px">Choose a doctor from the left to start your consultation</p>
+        </div>
+    </div>
+</div>
+
+<script>
+const API = 'http://localhost:8080/api';
+const token = localStorage.getItem('portal_token');
+const patient = JSON.parse(localStorage.getItem('portal_patient') || '{}');
+
+if (!token) {
+    window.location.href = 'portal-login.html';
+}
+
+let curDoc = null;
+let roomId = null;
+let allDocs = [];
+let busy = false;
+let messages = [];
+
+function getChatKey() {
+    return `chat_history_doctor_${curDoc?.id || 'default'}`;
+}
+
+document.getElementById('nav-av').textContent =
+    (patient.firstName || 'P')[0];
+
+document.getElementById('nav-name').textContent =
+    patient.firstName || 'Patient';
+
+async function loadDocs() {
+    try {
+        const response = await fetch(API + '/chat/doctors', {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+
+        let docs = await response.json();
+
+        const bookedDoctorId =
+            localStorage.getItem('bookedDoctorId');
+
+        console.log("BOOKED DOCTOR:", bookedDoctorId);
+
+        // show only selected doctor
+        if (bookedDoctorId) {
+            docs = docs.filter(
+                doc => String(doc.id) === String(bookedDoctorId)
+            );
+        }
+
+        allDocs = docs;
+        renderDocs(allDocs);
+
+    } catch (error) {
+        document.getElementById('doc-list').innerHTML =
+            '<div style="padding:20px;color:red">Cannot load doctors</div>';
+    }
+}
+
+function renderDocs(docs) {
+    const list = document.getElementById('doc-list');
+    list.innerHTML = '';
+
+    if (!docs.length) {
+        list.innerHTML =
+            '<div style="padding:20px;color:red">No booked doctor found</div>';
+        return;
+    }
+
+    docs.forEach(doc => {
+        const item = document.createElement('div');
+
+        item.className = 'doctor-item';
+
+        item.innerHTML = `
+    <div>${doc.name || localStorage.getItem('bookedDoctorName')}</div>
+    <small>${doc.specialization}</small>
+`;
+
+        item.onclick = () => selectDoc(doc);
+
+        list.appendChild(item);
+    });
+}
+
+function selectDoc(doc) {
+    curDoc = doc;
+
+    // clear previous chat completely
+    messages = [];
+
+    // optional: remove saved chat for this doctor
+    localStorage.removeItem(`chat_history_doctor_${doc.id}`);
+
+    roomId = `patient_${patient.id}_doctor_${doc.id}`;
+
+    buildUI(doc);
+    greeting();
+}
+function updateQuickSymptoms(spec) {
+    const symptomBox = document.querySelector('.quick-symptoms');
+
+    if (!symptomBox) return;
+
+    let buttons = '';
+
+    if (spec.includes('Neuro')) {
+        buttons = `
+            <button onclick="sendQuick('Headache')">🧠 Headache</button>
+            <button onclick="sendQuick('Dizziness')">💫 Dizziness</button>
+            <button onclick="sendQuick('Numbness')">✋ Numbness</button>
+            <button onclick="sendQuick('Seizure')">⚡ Seizure</button>
+        `;
+    }
+
+    else if (spec.includes('Ortho')) {
+        buttons = `
+            <button onclick="sendQuick('Knee pain')">🦵 Knee Pain</button>
+            <button onclick="sendQuick('Back pain')">🦴 Back Pain</button>
+            <button onclick="sendQuick('Joint pain')">🦾 Joint Pain</button>
+            <button onclick="sendQuick('Fracture')">🩹 Fracture</button>
+        `;
+    }
+
+    else if (spec.includes('Gyne')) {
+        buttons = `
+            <button onclick="sendQuick('Periods issue')">🩸 Periods</button>
+            <button onclick="sendQuick('Pregnancy pain')">🤰 Pregnancy</button>
+            <button onclick="sendQuick('PCOS')">🌸 PCOS</button>
+            <button onclick="sendQuick('Pelvic pain')">💗 Pelvic Pain</button>
+        `;
+    }
+
+    else {
+        buttons = `
+            <button onclick="sendQuick('Fever')">🌡 Fever</button>
+            <button onclick="sendQuick('Headache')">🤕 Headache</button>
+            <button onclick="sendQuick('Stomach pain')">🤢 Stomach</button>
+            <button onclick="sendQuick('Cough')">🤧 Cough</button>
+        `;
+    }
+
+    symptomBox.innerHTML = buttons;
+}
+function buildUI(doc) {
+    document.getElementById('chat-main').innerHTML = `
+        <div class="chat-hdr">
+            <div class="hdr-name">
+                Dr. ${doc.firstName} ${doc.lastName}
+            </div>
+        </div>
+
+        <div class="msgs" id="msgs"></div>
+       <div class="qr-bar" id="qr">
+    ${getQuickButtons(doc)}
+</div>
+       
+           
+
+        <div class="inp-area">
+            <textarea
+                class="cinp"
+                id="cinp"
+                placeholder="Describe your symptoms..."
+            ></textarea>
+
+            <button class="sbtn" onclick="send()">➤</button>
+        </div>
+    `;
+}
+function getQuickButtons(doc) {
+    const spec = doc.specialization || '';
+
+    if (spec.includes('Cardio')) {
+        return `
+            <button class="qr-btn" onclick="sq('I have chest pain')">❤️ Chest Pain</button>
+            <button class="qr-btn" onclick="sq('My BP is high')">🩺 High BP</button>
+            <button class="qr-btn" onclick="sq('I feel heart beat fast')">💓 Fast Heartbeat</button>
+            <button class="qr-btn" onclick="sq('Pulse issue')">📈 Pulse Issue</button>
+        `;
+    }
+
+    if (spec.includes('Gyn')) {
+        return `
+            <button class="qr-btn" onclick="sq('I have periods problem')">🩸 Periods Issue</button>
+            <button class="qr-btn" onclick="sq('Pregnancy pain')">🤰 Pregnancy Pain</button>
+            <button class="qr-btn" onclick="sq('PCOS symptoms')">🌸 PCOS</button>
+            <button class="qr-btn" onclick="sq('Pelvic pain')">💢 Pelvic Pain</button>
+        `;
+    }
+    if (spec.includes('Neuro')) {
+    return `
+        <button class="qr-btn" onclick="sq('I have headache')">🧠 Headache</button>
+        <button class="qr-btn" onclick="sq('I feel dizziness')">💫 Dizziness</button>
+        <button class="qr-btn" onclick="sq('I have numbness')">✋ Numbness</button>
+        <button class="qr-btn" onclick="sq('I had seizure')">⚡ Seizure</button>
+    `;
+}
+if (spec.includes('Onco')) {
+    return `
+        <button class="qr-btn" onclick="sq('I found a lump')">🎗 Lump</button>
+        <button class="qr-btn" onclick="sq('Unexplained weight loss')">⚖ Weight Loss</button>
+        <button class="qr-btn" onclick="sq('Severe fatigue')">😴 Fatigue</button>
+        <button class="qr-btn" onclick="sq('Persistent swelling')">🩹 Swelling</button>
+    `;
+}
+
+
+    if (spec.includes('Pedia')) {
+        return `
+            <button class="qr-btn" onclick="sq('Child fever')">🤒 Child Fever</button>
+            <button class="qr-btn" onclick="sq('Vomiting')">🤢 Vomiting</button>
+            <button class="qr-btn" onclick="sq('Cold and cough')">😷 Cold</button>
+            <button class="qr-btn" onclick="sq('Vaccination query')">💉 Vaccination</button>
+        `;
+    }
+
+    
+
+   
+}
+
+function loadChatHistory() {
+    const area = document.getElementById('msgs');
+
+    messages.forEach(msg => {
+        const div = document.createElement('div');
+
+        div.className =
+            'mrow ' + (msg.senderRole === 'PATIENT' ? 'pat' : 'doc');
+
+        div.innerHTML = `
+            <div class="mcontent">
+                <div class="mbub">${msg.content}</div>
+            </div>
+        `;
+
+        area.appendChild(div);
+    });
+
+    area.scrollTop = area.scrollHeight;
+}
+
+function greeting() {
+    if (messages.length === 0 && curDoc) {
+        addMsg({
+            senderRole: 'DOCTOR',
+            content:
+                `Hello, I am Dr. ${curDoc.firstName} ${curDoc.lastName}, ` +
+                `${curDoc.specialization} specialist. ` +
+                `Please tell me your symptoms, I am here to help you.`
+        });
+    }
+}
+
+function addMsg(msg) {
+    const area = document.getElementById('msgs');
+
+    const div = document.createElement('div');
+
+    div.className =
+        'mrow ' + (msg.senderRole === 'PATIENT' ? 'pat' : 'doc');
+     
+    div.innerHTML = `
+        <div class="mcontent">
+            <div class="mbub">${msg.content}</div>
+        </div>
+    `;
+
+    area.appendChild(div);
+
+    messages.push(msg);
+    localStorage.setItem(getChatKey(), JSON.stringify(messages));
+
+    area.scrollTop = area.scrollHeight;
+}
+
+function send() {
+    if (busy) return;
+
+    const input = document.getElementById('cinp');
+    const text = input.value.trim();
+
+    if (!text || !curDoc) return;
+
+    addMsg({
+        senderRole: 'PATIENT',
+        content: text
+    });
+
+    input.value = '';
+
+    aiReply(text);
+}
+
+function sq(text) {
+    document.getElementById('cinp').value = text;
+    send();
+}
+function aiReply(msg) {
+    busy = true;
+
+    setTimeout(() => {
+        let reply = '';
+        const lower = msg.toLowerCase();
+        const spec = curDoc?.specialization || '';
+
+        // Cardiology
+        if (spec.includes('Cardio')) {
+            if (
+                lower.includes('heart') ||
+                lower.includes('chest') ||
+                lower.includes('bp')
+            ) {
+                reply =
+                    'This seems related to heart health. Please monitor BP and consider ECG.';
+            } else {
+                reply =
+                    'Please ask only heart-related concerns.';
+            }
+        }
+
+        // Gynecology
+        else if (spec.includes('Gyn')) {
+            if (lower.includes('period')) {
+                reply =
+                    'Irregular periods may require hormone evaluation.';
+            } else if (lower.includes('pregnancy')) {
+                reply =
+                    'Please mention trimester and pain severity.';
+            } else {
+                reply =
+                    'Please explain gynecology-related symptoms clearly.';
+            }
+        }
+
+        // Orthopedics
+        else if (spec.includes('Ortho')) {
+            if (
+                lower.includes('knee') ||
+                lower.includes('joint') ||
+                lower.includes('back') ||
+                lower.includes('fracture')
+            ) {
+                reply =
+                    'This may be bone or joint related. Please avoid strain and mention pain severity.';
+            } else {
+                reply =
+                    'Please explain orthopedic symptoms clearly.';
+            }
+        }
+
+        // Neurology
+        else if (spec.includes('Neuro')) {
+    if (lower.includes('headache')) {
+        reply = 'This may be related to migraine or stress headache. Please mention duration and severity.';
+    }
+    else if (lower.includes('numbness')) {
+        reply = 'Numbness may indicate nerve compression or neurological weakness. Please mention affected body part.';
+    }
+    else if (lower.includes('dizziness')) {
+        reply = 'Dizziness may be due to vertigo, low BP, or neurological causes. Please mention when it occurs.';
+    }
+    else if (lower.includes('seizure')) {
+        reply = 'Seizure symptoms require urgent medical attention. Please visit the hospital immediately.';
+    }
+    else {
+        reply = 'Please explain neurological symptoms clearly.';
+    }
+}
+
+        // Oncology
+        else if (spec.includes('Onco')) {
+            if (
+                lower.includes('lump') ||
+                lower.includes('swelling')
+            ) {
+                reply =
+                    'A lump or swelling needs careful evaluation. Please mention location and size.';
+            }
+            else if (
+                lower.includes('weight')
+            ) {
+                reply =
+                    'Unexplained weight loss should be monitored carefully.';
+            }
+            else if (
+                lower.includes('fatigue')
+            ) {
+                reply =
+                    'Persistent fatigue may need blood investigations.';
+            }
+            else {
+                reply =
+                    'Please explain oncology-related symptoms clearly.';
+            }
+        }
+
+        // Pediatrics
+        else if (spec.includes('Pedia')) {
+    if (
+        lower.includes('fever') ||
+        lower.includes('cold') ||
+        lower.includes('cough')
+    ) {
+        reply =
+            'This looks like a child fever/cold issue. Please check temperature, keep the child hydrated, and monitor cough severity.';
+    }
+    else if (
+        lower.includes('vomit') ||
+        lower.includes('vomiting')
+    ) {
+        reply =
+            'Vomiting in children may lead to dehydration. Please give ORS and fluids immediately.';
+    }
+    else if (
+        lower.includes('vaccination') ||
+        lower.includes('vaccine')
+    ) {
+        reply =
+            'Please ensure the child vaccination schedule is up to date according to age.';
+    }
+    else {
+        reply =
+            'Please explain child symptoms clearly with age and duration.';
+    }
+}
+
+        // Default
+        else {
+            reply =
+                'Please monitor symptoms and visit clinic if needed.';
+        }
+
+        addMsg({
+            senderRole: 'DOCTOR',
+            content: reply
+        });
+
+        busy = false;
+    }, 1000);
+}
+
+loadDocs();
+</script>

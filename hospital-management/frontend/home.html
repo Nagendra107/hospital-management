@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediCare Pro — Hospital Management</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f7f9;
+    --white: #ffffff;
+    --text: #091b51;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --patient: #2563eb;
+    --patient-light: #eff6ff;
+    --doctor: #0d9488;
+    --doctor-light: #f0fdfa;
+    --admin: #7c3aed;
+    --admin-light: #f5f3ff;
+  }
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-image: url('https://png.pngtree.com/background/20250213/original/pngtree-modern-hospital-lobby-with-a-reception-desklight-blue-chairswhite-walls-lights-picture-image_15577842.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+  /* Header */
+  header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--patient);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.1rem;
+  }
+
+  .logo-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem;
+    color: var(--text);
+  }
+
+  .logo-sub {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 3rem 1rem 2rem;
+  }
+
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+
+  .hero p {
+    color: var(--muted);
+    font-size: 1rem;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  /* Cards */
+  .cards {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1rem 2rem 3rem;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    flex: 1;
+    min-width: 240px;
+    max-width: 280px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+  }
+
+  .card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin: 0 auto 1rem;
+  }
+
+  .card-patient .card-icon { background: var(--patient-light); }
+  .card-doctor .card-icon  { background: var(--doctor-light); }
+  .card-admin .card-icon   { background: var(--admin-light); }
+
+  .card h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+
+  .card p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    transition: opacity 0.2s;
+    margin-bottom: 0.5rem;
+  }
+
+  .btn:hover { opacity: 0.88; }
+
+  .btn-primary-patient { background: var(--patient); color: white; }
+  .btn-primary-doctor  { background: var(--doctor);  color: white; }
+  .btn-primary-admin   { background: var(--admin);   color: white; }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  /* Footer */
+  footer {
+    margin-top: auto;
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    background: var(--white);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🏥</div>
+    <div>
+      <div class="logo-text">MediCare Pro</div>
+      <div class="logo-sub">Hospital Management System</div>
+    </div>
+  </div>
+</header>
+
+<div class="hero">
+  <h1>Welcome to MediCare Pro</h1>
+  <p>Select your role to continue to your dashboard</p>
+</div>
+
+<div class="cards">
+
+  <!-- Patient -->
+  <div class="card card-patient">
+    <div class="card-icon">🧑‍⚕️</div>
+    <h2>Patient</h2>
+    <p>Book appointments, chat with doctors, and manage your health records</p>
+    <a href="portal-login.html" class="btn btn-primary-patient">Patient Login</a>
+    <a href="portal-register.html" class="btn btn-outline">New Patient? Register</a>
+  </div>
+
+  <!-- Doctor -->
+  <div class="card card-doctor">
+    <div class="card-icon">👨‍⚕️</div>
+    <h2>Doctor</h2>
+    <p>View your patients, manage appointments, and respond to messages</p>
+    <a href="login.html" class="btn btn-primary-doctor">Doctor Login</a>
+  </div>
+
+  <!-- Admin -->
+  <div class="card card-admin">
+    <div class="card-icon">🏥</div>
+    <h2>Admin / Staff</h2>
+    <p>Manage hospital operations, doctors, patients, and billing</p>
+    <a href="login.html" class="btn btn-primary-admin">Admin Login</a>
+  </div>
+
+</div>
+
+<footer>
+  © 2026 MediCare Pro · Secure Hospital Management System
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Doctors — MediCare Pro</title>
+<link rel="stylesheet" href="css/portal.css">
+</head>
+<body>
+
+<nav class="portal-nav">
+    <a href="portal-dashboard.html" class="nav-logo">
+        <div class="nav-logo-icon">🏥</div>
+        <div><div class="nav-logo-text">MediCare Pro</div><div class="nav-logo-sub">Patient Portal</div></div>
+    </a>
+    <div class="nav-links">
+        <a href="portal-dashboard.html" class="nav-link">🏠 Dashboard</a>
+        <a href="portal-appointments.html" class="nav-link">📅 Appointments</a>
+        <a href="portal-doctors.html" class="nav-link active">👨‍⚕️ Doctors</a>
+        <a href="portal-bills.html" class="nav-link">🧾 My Bills</a>
+        <a href="portal-profile.html" class="nav-link">👤 Profile</a>
+    </div>
+    <div class="nav-right">
+        <div class="nav-user" onclick="location.href='portal-profile.html'">
+            <div class="nav-avatar" id="nav-avatar">P</div>
+            <div class="nav-user-name" id="nav-user-name">Patient</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="portalLogout()">Logout</button>
+    </div>
+</nav>
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="page-title">👨‍⚕️ Our Doctors</div>
+        <div class="page-subtitle">Find the right doctor and book an appointment</div>
+    </div>
+
+    <!-- Search & Filter -->
+    <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;align-items:center;gap:8px;background:#fff;border:2px solid var(--border);border-radius:10px;padding:8px 14px;flex:1;max-width:300px">
+            <span>🔍</span>
+            <input type="text" id="search-input" placeholder="Search doctors..." style="border:none;outline:none;font-family:inherit;font-size:13px;width:100%" oninput="searchDoctors(this.value)">
+        </div>
+        <select id="spec-filter" class="form-control" style="width:auto;min-width:180px" onchange="filterBySpec(this.value)">
+            <option value="">All Specializations</option>
+        </select>
+    </div>
+
+    <div class="doctors-grid" id="doctors-grid">
+        <div style="grid-column:1/-1"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+</div>
+
+<!-- Doctor Detail Modal -->
+<div id="doc-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)document.getElementById('doc-modal').style.display='none'">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title" id="doc-modal-title">Doctor Details</div>
+            <button class="modal-close" onclick="document.getElementById('doc-modal').style.display='none'">✕</button>
+        </div>
+        <div class="modal-body" id="doc-modal-body"></div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="document.getElementById('doc-modal').style.display='none'">Close</button>
+            <a href="portal-appointments.html" class="btn btn-primary">📅 Book Appointment</a>
+        </div>
+    </div>
+</div>
+
+<script src="js/portal-api.js"></script>
+<script>
+const user = requirePatientAuth();
+loadNavUser();
+
+let allDoctors = [];
+
+async function loadDoctors() {
+    const [docRes, specRes] = await Promise.all([portalApi.getDoctors(), portalApi.getSpecializations()]);
+
+    if (docRes?.ok) {
+        allDoctors = docRes.data;
+        renderDoctors(allDoctors);
+    }
+
+    if (specRes?.ok) {
+        const sel = document.getElementById('spec-filter');
+        sel.innerHTML = '<option value="">All Specializations</option>' +
+            specRes.data.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+}
+
+function renderDoctors(docs) {
+    const grid = document.getElementById('doctors-grid');
+    if (!docs.length) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--muted)">No doctors found</div>';
+        return;
+    }
+
+    grid.innerHTML = docs.map(d => `
+        <div class="doctor-card" onclick="viewDoctor(${d.id})">
+            <div class="doc-avatar">${((d.firstName||'?')[0]+(d.lastName||'?')[0]).toUpperCase()}</div>
+            <div class="doc-name">Dr. ${d.firstName} ${d.lastName}</div>
+            <div class="doc-spec">${d.specialization}</div>
+            <div style="display:inline-block;background:var(--green-pale);color:var(--green);font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:10px">Available</div>
+            <div class="doc-info">🎓 ${d.qualification || '—'}</div>
+            <div class="doc-info">⏱️ ${d.experienceYears || 0} years experience</div>
+            <div class="doc-info">💰 ₹${d.consultationFee || 0} / visit</div>
+            <div class="doc-info">📅 ${d.consultationDays || 'Mon-Fri'}</div>
+            <div class="doc-info">🕐 ${d.consultationHours || 'By appointment'}</div>
+            <div style="margin-top:14px;display:flex;gap:8px;justify-content:center">
+                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();location.href='portal-appointments.html'">Book</button>
+                <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();viewDoctor(${d.id})">View</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function viewDoctor(id) {
+    const d = allDoctors.find(x => x.id === id);
+    if (!d) return;
+    document.getElementById('doc-modal-title').textContent = `Dr. ${d.firstName} ${d.lastName}`;
+    document.getElementById('doc-modal-body').innerHTML = `
+        <div style="text-align:center;margin-bottom:20px">
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:#fff;margin:0 auto 12px">${((d.firstName||'?')[0]+(d.lastName||'?')[0]).toUpperCase()}</div>
+            <div style="font-family:'Lora',serif;font-size:20px;font-weight:700">Dr. ${d.firstName} ${d.lastName}</div>
+            <div style="color:var(--primary);font-weight:700;margin-top:4px">${d.specialization}</div>
+            <div style="display:inline-block;background:var(--green-pale);color:var(--green);font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;margin-top:8px">✅ Available</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="background:var(--bg);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Qualification</div>
+                <div style="font-weight:700">${d.qualification || '—'}</div>
+            </div>
+            <div style="background:var(--bg);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Experience</div>
+                <div style="font-weight:700">${d.experienceYears || 0} Years</div>
+            </div>
+            <div style="background:var(--bg);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Department</div>
+                <div style="font-weight:700">${d.department || d.specialization}</div>
+            </div>
+            <div style="background:var(--primary-pale);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:800;color:var(--primary);text-transform:uppercase;margin-bottom:4px">Consultation Fee</div>
+                <div style="font-weight:800;font-size:18px;color:var(--primary)">₹${d.consultationFee || 0}</div>
+            </div>
+            <div style="background:var(--bg);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Working Days</div>
+                <div style="font-weight:700;font-size:12px">${d.consultationDays || 'Mon-Fri'}</div>
+            </div>
+            <div style="background:var(--bg);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Working Hours</div>
+                <div style="font-weight:700;font-size:12px">${d.consultationHours || '9AM - 5PM'}</div>
+            </div>
+        </div>
+
+        ${d.bio ? `<div style="margin-top:16px;background:var(--bg);border-radius:10px;padding:14px"><div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:6px">About</div><div style="font-size:13px;line-height:1.6;color:var(--muted)">${d.bio}</div></div>` : ''}
+    `;
+    document.getElementById('doc-modal').style.display = 'flex';
+}
+
+function searchDoctors(q) {
+    const filtered = allDoctors.filter(d =>
+        `${d.firstName} ${d.lastName} ${d.specialization} ${d.department}`.toLowerCase().includes(q.toLowerCase())
+    );
+    renderDoctors(filtered);
+}
+
+function filterBySpec(spec) {
+    renderDoctors(spec ? allDoctors.filter(d => d.specialization === spec) : allDoctors);
+}
+
+loadDoctors();
+</script>
+</body>
+</html>
