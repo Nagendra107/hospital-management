@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8080/api';
+const API_Base='https://hospital-management-chi-lake.vercel.app/home.html';
 
 const portalApi = {
     getToken: () => localStorage.getItem('portal_token'),
