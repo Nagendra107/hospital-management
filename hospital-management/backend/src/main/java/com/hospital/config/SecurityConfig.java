@@ -58,9 +58,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-      config.setAllowedOrigins(List.of(
-    "https://hospital-management-chi-lake.vercel.app"
-));
+    config.setAllowedOriginPatterns(List.of("https://*.vercel.app"));
 config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 config.setAllowedHeaders(List.of("*"));
 config.setAllowCredentials(true);
