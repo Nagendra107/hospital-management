@@ -1,5 +1,5 @@
 // API Configuration
-const API_Base='https://hospital-management-chi-lake.vercel.app/home.html';
+const API_BASE = 'https://hospital-backend.onrender.com/api';
 
 const api = {
     getToken: () => localStorage.getItem('hms_token'),

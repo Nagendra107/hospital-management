@@ -1,4 +1,4 @@
-const API_Base='https://hospital-management-chi-lake.vercel.app/home.html';
+const API_BASE = 'https://hospital-backend.onrender.com/api';
 
 const portalApi = {
     getToken: () => localStorage.getItem('portal_token'),
