@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE = 'https://hospital-backend.onrender.com/api';
+const API_BASE = 'https://hospital-backend.onrender.com';
 
 const api = {
     getToken: () => localStorage.getItem('hms_token'),
