@@ -467,22 +467,36 @@ function aiReply(msg) {
             }
         }
 
-        // Neurology
-        else if (spec.includes('Neuro')) {
+       else if (spec.includes('Neuro')) {
     if (lower.includes('headache')) {
-        reply = 'This may be related to migraine or stress headache. Please mention duration and severity.';
-    }
-    else if (lower.includes('numbness')) {
-        reply = 'Numbness may indicate nerve compression or neurological weakness. Please mention affected body part.';
+        reply = 'Since when are you having the headache? Is it mild, moderate, or severe?';
     }
     else if (lower.includes('dizziness')) {
-        reply = 'Dizziness may be due to vertigo, low BP, or neurological causes. Please mention when it occurs.';
+        reply = 'When does the dizziness happen? After standing up, in the morning, or continuously?';
+    }
+    else if (lower.includes('numbness')) {
+        reply = 'Which body part is affected by numbness? Hand, leg, face, or fingers?';
     }
     else if (lower.includes('seizure')) {
-        reply = 'Seizure symptoms require urgent medical attention. Please visit the hospital immediately.';
+        reply = 'When did the seizure occur and how long did it last? Please seek immediate medical attention.';
+    }
+    else if (
+        lower.includes('severe') ||
+        lower.includes('moderate') ||
+        lower.includes('mild')
+    ) {
+        reply = 'Are you also having dizziness, weakness, blurred vision, or fever?';
+    }
+    else if (
+        lower.includes('yesterday') ||
+        lower.includes('today') ||
+        lower.includes('morning') ||
+        lower.includes('night')
+    ) {
+        reply = 'Did you take any medicine for this problem?';
     }
     else {
-        reply = 'Please explain neurological symptoms clearly.';
+        reply = 'Please explain your neurological symptoms clearly with duration and severity.';
     }
 }
 

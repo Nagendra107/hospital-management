@@ -208,23 +208,92 @@
                     <option value="UPI">UPI</option>
                     <option value="INSURANCE">Insurance</option>
                 </select>
+                
+
             </div>
+           
+
+<div style="text-align:center; margin-top:20px;">
+    <h3>Scan & Pay (UPI)</h3>
+    <div id="qrcode"></div>
+    <div style="text-align:center; margin-top:20px;">
+        <button class="btn btn-primary" onclick="paymentCompleted()">
+            I Have Paid
+        </button>
+
+</div>
         </div>
         <div class="modal-footer">
             <button class="btn btn-outline" onclick="closePayModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="processPayment()">Process Payment</button>
+            
         </div>
+    </div>
+</div>
+<!-- Full Payment Success Screen -->
+<div id="success-screen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#2e7d32; z-index:9999; color:white;">
+    
+    <div style="text-align:center; padding-top:60px;">
+        <div style="font-size:70px;">✔</div>
+        <h1 style="margin-top:10px;">Payment Successful</h1>
+        <p id="success-time"></p>
+    </div>
+
+    <div style="background:white; color:black; width:400px; margin:40px auto; border-radius:20px; padding:30px; text-align:center;">
+        <h2 id="success-patient-name">Patient Name</h2>
+        <h1 id="success-amount">₹0</h1>
+        <p>Payment completed successfully</p>
+
+        <button class="btn btn-primary" onclick="closeSuccessScreen()" style="margin-top:20px;">
+            Done
+        </button>
     </div>
 </div>
 
 <script src="js/api.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 requireAuth(); loadUserInfo();
 let allBills = [];
+async function paymentCompleted() {
+    const id = document.getElementById('pay-bill-id').value;
+    const amount = parseFloat(document.getElementById('pay-amount').value);
+    const method = document.getElementById('pay-method').value;
 
+    await api.payBill(id, {
+        amount,
+        paymentMethod: method
+    });
+
+    closePayModal();
+
+    document.getElementById('success-amount').textContent = '₹' + amount;
+    document.getElementById('success-time').textContent =
+        new Date().toLocaleString();
+
+    document.getElementById('success-screen').style.display = 'block';
+
+    loadBills();
+}
+
+document.addEventListener("visibilitychange", async function () {
+    if (!document.hidden && document.getElementById('pay-modal').style.display === 'flex') {
+
+        const id = document.getElementById('pay-bill-id').value;
+        const amount = parseFloat(document.getElementById('pay-amount').value);
+        const method = document.getElementById('pay-method').value;
+
+        await api.payBill(id, {
+            amount,
+            paymentMethod: method
+        });
+
+        paymentCompleted();
+        loadBills();
+    }
+});
 async function loadBills() {
     const [bRes, sRes] = await Promise.all([api.getBills(), api.get('/bills/stats')]);
-    if (bRes?.ok) {
+    if (bRes?.ok) { 
         allBills = bRes.data;
         renderTable(allBills);
         document.getElementById('stat-bills').textContent = allBills.length;
@@ -339,23 +408,57 @@ async function saveBill() {
 function openPayModal(id) {
     const b = allBills.find(x => x.id === id);
     if (!b) return;
+
     document.getElementById('pay-bill-id').value = id;
     document.getElementById('pay-bill-num').textContent = b.billNumber || id;
     document.getElementById('pay-due-display').textContent = 'Due: ' + formatCurrency(b.dueAmount);
     document.getElementById('pay-amount').value = b.dueAmount || '';
+
+    // 🔥 CREATE QR CODE
+    const upiId = "9177408079@ybl"; // replace this
+    const amount = b.dueAmount;
+
+    const upiLink = `upi://pay?pa=${upiId}&pn=MediCare Pro&am=${amount}&cu=INR`;
+
+    document.getElementById("qrcode").innerHTML = ""; // clear old QR
+
+    new QRCode(document.getElementById("qrcode"), {
+        text: upiLink,
+        width: 200,
+        height: 200
+    });
+
     document.getElementById('pay-modal').style.display = 'flex';
 }
-
 async function processPayment() {
     const id = document.getElementById('pay-bill-id').value;
     const amount = parseFloat(document.getElementById('pay-amount').value);
     const method = document.getElementById('pay-method').value;
-    if (!amount || amount <= 0) { showToast('Enter valid amount', 'warning'); return; }
-    const res = await api.payBill(id, { amount, paymentMethod: method });
-    if (res?.ok) { showToast('Payment processed!'); closePayModal(); loadBills(); }
-    else showToast('Error processing payment', 'error');
-}
 
+    if (!amount || amount <= 0) {
+        showToast('Enter valid amount', 'warning');
+        return;
+    }
+
+    const res = await api.payBill(id, {
+        amount,
+        paymentMethod: method
+    });
+
+    if (res?.ok) {
+        closePayModal();
+
+        document.getElementById('success-amount').textContent = '₹' + amount;
+        document.getElementById('success-time').textContent =
+            new Date().toLocaleString();
+
+        document.getElementById('success-screen').style.display = 'block';
+
+        loadBills();
+    } else {
+        showToast('Payment failed', 'error');
+    }
+}
 async function deleteBill(id) {
     if (!confirm('Delete this bill?')) return;
     const res = await api.deleteBill(id);
@@ -364,7 +467,9 @@ async function deleteBill(id) {
 
 function closeModal() { document.getElementById('bill-modal').style.display = 'none'; }
 function closePayModal() { document.getElementById('pay-modal').style.display = 'none'; }
+
 loadBills();
 </script>
+
 </body>
 </html>

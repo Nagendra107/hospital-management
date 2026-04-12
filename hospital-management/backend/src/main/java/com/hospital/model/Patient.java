@@ -26,6 +26,7 @@ public class Patient {
 
     @Column(unique = true)
     private String email;
+    private String password;
 
     private String phone;
     private LocalDate dateOfBirth;

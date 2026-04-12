@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE = 'https://hospital-backend.onrender.com';
+const API_BASE = 'http://localhost:8080/api';
 
 const api = {
     getToken: () => localStorage.getItem('hms_token'),
@@ -65,7 +65,7 @@ const api = {
     deleteDoctor: (id) => api.delete(`/doctors/${id}`),
     searchDoctors: (q) => api.get(`/doctors/search?q=${q}`),
     getActiveDoctors: () => api.get('/doctors/active'),
-
+        
     // Appointments
     getAppointments: () => api.get('/appointments'),
     getTodayAppointments: () => api.get('/appointments/today'),

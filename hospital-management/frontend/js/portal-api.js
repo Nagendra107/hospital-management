@@ -1,4 +1,4 @@
-const API_BASE = 'https://hospital-backend.onrender.com';
+const API_BASE = 'http://localhost:8080/api';
 
 const portalApi = {
     getToken: () => localStorage.getItem('portal_token'),
